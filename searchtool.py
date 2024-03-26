@@ -2,28 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import time
-
-# def scrape_page(page, base_link):
-#     response = requests.get(page)
-#     print(datetime.datetime.now())
-#     soup = BeautifulSoup(response.text, 'html.parser')
-#     quotes = soup.select('div.quote')   
-    
-#     results = []
-#     for quote in quotes:
-#         text = quote.find('span', class_='text').text.strip()
-#         author = quote.find('small', class_='author').text.strip()
-#         author_link = base_link + quote.find('a')['href']
-#         tags = [tag.text for tag in quote.find_all('a', class_='tag')]
-        
-
-#         results.append({
-#             'text': text,
-#             'author': author,
-#             'author_link': author_link,
-#             'tags': tags
-#         })
-#     return results, soup
+from unidecode import unidecode
 
 def build():
     # define the stopwords
@@ -57,15 +36,18 @@ def build():
         
         response = requests.get(page)
         soup = BeautifulSoup(response.text, 'html.parser')
+        # replace unicode characters with ascii where possible
+        soup = unidecode(str(soup))
+        soup = BeautifulSoup(soup, 'html.parser')
         
         # scrape the page, tokenising all non-stopwords and counting their frequency on the page
+        
         text = soup.get_text() # includes <title> and <meta> tags !!!
         # decode unicode characters
         text.encode().decode('unicode_escape')
-        # only keelp alnums 
+        # only keelp alnums > 2 characters
         text = ''.join([ c for c in text if c.isalnum() or c.isspace() ])
-        words = [ w for w in text.lower().split() if w not in stopwords ]
-        
+        words = [ w for w in text.lower().split() if w not in stopwords and len(w) > 2]
         
         for w in words:
             # check if word already in index
@@ -78,7 +60,7 @@ def build():
                     # add page to index for that word
                     index[w][page] = 1
             else:
-                
+                print(w)
                 # add word to index with 1 count for current page
                 index[w] = {page: 1}
         
@@ -91,19 +73,17 @@ def build():
                 continue
             
             full_link = "https://quotes.toscrape.com" + link.get('href')
-            # print(full_link)
             # append link to frontier if it has not been visited already and is not already in the frontier
             # only if it is on the quotes.toscrape.com domain
             if full_link not in visited and full_link not in frontier:
                 frontier.append(full_link)
-                # print(f"Adding {full_link} to frontier")
         
         # wait at least 6 seconds before making the request
         time.sleep(6.5)
         
     # save the index to a file
-    # with open('index.json', 'w') as f:
-    #     json.dump(index, f)
+    with open('index.json', 'w') as f:
+        json.dump(index, f)
 
 
 def main():
@@ -127,7 +107,6 @@ def main():
             with open('index.json', 'r') as f:
                 index = json.load(f)
             print("Index loaded successfully.")
-            print(index['mountain'])
             continue
     
     
