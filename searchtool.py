@@ -129,9 +129,8 @@ def main():
             print(f"Searching for: {query}")
             # search the index for the query
             if query in index:
-                print(f"Found {len(index[query])} results:")
-                for page, count in index[query].items():
-                    print(f"{page} - {count} occurences")
+                print(f"Printing inverted index for {query}:")
+                print(index.get(query))
             else:
                 print("No results found.")
         
@@ -143,8 +142,17 @@ def main():
                 continue
             
             query = choice.split(' ')[1:]
+            # remove trailing whitespace
+            if query[-1] == '':
+                query = query[:-1]
+                
             print(f"Searching for: {' '.join(query)}")
             # search the index for the query
+            
+            # check if the first query is in the index
+            if query[0] not in index:
+                print("No results found.")
+                continue
             
             # get the pointers for the first query
             pointers = index.get(query[0]).copy()
@@ -153,12 +161,19 @@ def main():
             if len(query) > 1:
                 # for each subsequent query, get the pointers and add the count for each pointer if found and remove it if not
                 for q in query[1:]:
-                    ps = index.get(q)
-                    for p in ps:
-                        if p in pointers:
-                            pointers[p] += ps[p]
-                        
-                
+                    # check if query in index
+                    if q not in index:
+                        no_results = True
+                    else:
+                        ps = index.get(q)
+                        for p in ps:
+                            if p in pointers:
+                                pointers[p] += ps[p]
+                    
+                if no_results:
+                    print("No results found.")
+                    continue
+            
                 # otherwise remove pointers that have not had their count increased
                 p_to_remove = []
                 for p in pointers:
