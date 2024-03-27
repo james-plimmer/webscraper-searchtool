@@ -147,11 +147,26 @@ def main():
             # search the index for the query
             
             # get the pointers for the first query
-            pointers = set(index.get(query[0], {}).keys())
+            pointers = index.get(query[0]).copy()
             
-            # for each subsequent query, get the pointers and take the intersection with the current pointers
-            for q in query[1:]:
-                pointers = pointers.intersection(set(index.get(q, {}).keys()))
+            # if there are more search terms
+            if len(query) > 1:
+                # for each subsequent query, get the pointers and add the count for each pointer if found and remove it if not
+                for q in query[1:]:
+                    ps = index.get(q)
+                    for p in ps:
+                        if p in pointers:
+                            pointers[p] += ps[p]
+                        
+                
+                # otherwise remove pointers that have not had their count increased
+                p_to_remove = []
+                for p in pointers:
+                    if pointers[p] == index.get(query[0]).get(p):
+                        p_to_remove.append(p)
+                
+                for p in p_to_remove:
+                    del pointers[p]
             
             # if there are no pointers, no results found
             if not pointers:
@@ -159,6 +174,8 @@ def main():
                 continue
             
             print(f"Found {len(pointers)} results:")
+            # sort the pointers by count
+            pointers = {k: v for k, v in sorted(pointers.items(), key=lambda item: item[1], reverse=True)}
             for pointer in pointers:
                 print(pointer)
 
