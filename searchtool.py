@@ -49,20 +49,20 @@ def build():
         text = ''.join([ c for c in text if c.isalnum() or c.isspace() ])
         words = [ w for w in text.lower().split() if w not in stopwords and len(w) > 2]
         
-        for w in words:
-            # check if word already in index
-            if w in index:
-                # check if page already in index for that word
-                if page in index[w]:
-                    # increment word counter for that page
-                    index[w][page] += 1
+        for posting in words:
+            # check if posting already in index
+            if posting in index:
+                # check if pointer already in index for that posting
+                if page in index[posting]:
+                    # increment posting counter for that pointer
+                    index[posting][page] += 1
                 else:
-                    # add page to index for that word
-                    index[w][page] = 1
+                    # add pointer to index for that posting
+                    index[posting][page] = 1
             else:
-                print(w)
-                # add word to index with 1 count for current page
-                index[w] = {page: 1}
+                print(posting)
+                # add posting to index with 1 count for current pointer
+                index[posting] = {page: 1}
         
         
         # find all links on the page
@@ -87,10 +87,17 @@ def build():
 
 
 def main():
+    index = None
+    
     while True:
+        # give user time to read previous output
+        time.sleep(1)
+        # print the menu
         print("\n\n\n-----------------------------")
         print("build")
         print("load")
+        print("print <query>")
+        print("find <query> [query2] [query3] ...") 
         print("-----------------------------")
         choice = input("Enter one of the above commands, or Q to quit: ")
         
@@ -98,16 +105,67 @@ def main():
             print("Goodbye!")
             break
         
+        
         elif choice.lower() == 'build':
             build()
             print("Index built successfully.")
             continue
+        
         
         elif choice.lower() == 'load':
             with open('index.json', 'r') as f:
                 index = json.load(f)
             print("Index loaded successfully.")
             continue
+        
+        
+        elif choice.split(' ')[0].lower() == 'print' and len(choice.split(' ')) == 2:
+            # ensure index is loaded
+            if index is None:
+                print("Index not loaded.")
+                continue
+            
+            query = choice.split(' ')[1]
+            print(f"Searching for: {query}")
+            # search the index for the query
+            if query in index:
+                print(f"Found {len(index[query])} results:")
+                for page, count in index[query].items():
+                    print(f"{page} - {count} occurences")
+            else:
+                print("No results found.")
+        
+        
+        elif choice.split(' ')[0].lower() == 'find' and len(choice.split(' ')) > 1:
+            # ensure index is loaded
+            if index is None:
+                print("Index not loaded.")
+                continue
+            
+            query = choice.split(' ')[1:]
+            print(f"Searching for: {' '.join(query)}")
+            # search the index for the query
+            
+            # get the pointers for the first query
+            pointers = set(index.get(query[0], {}).keys())
+            
+            # for each subsequent query, get the pointers and take the intersection with the current pointers
+            for q in query[1:]:
+                pointers = pointers.intersection(set(index.get(q, {}).keys()))
+            
+            # if there are no pointers, no results found
+            if not pointers:
+                print("No results found.")
+                continue
+            
+            print(f"Found {len(pointers)} results:")
+            for pointer in pointers:
+                print(pointer)
+
+        else:
+            print("Invalid command.")
+            continue
+            
     
     
 if __name__ == '__main__':
