@@ -4,6 +4,8 @@ import json
 import time
 from unidecode import unidecode
 
+#TODO: store pointers as unique ids for each page, not the full url. Check teams for requirements updates.
+
 def build():
     # define the stopwords
     stopwords = [
@@ -96,8 +98,7 @@ def main():
         print("\n\n\n-----------------------------")
         print("build")
         print("load")
-        print("print <query>")
-        print("find <query> [query2] [query3] ...") 
+        if index != None : print("print <query>\nfind <query> [query2] [query3] ...")
         print("-----------------------------")
         choice = input("Enter one of the above commands, or Q to quit: ")
         
@@ -157,6 +158,7 @@ def main():
             # get the pointers for the first query
             pointers = index.get(query[0]).copy()
             
+            no_results = False
             # if there are more search terms
             if len(query) > 1:
                 # for each subsequent query, get the pointers and add the count for each pointer if found and remove it if not
@@ -202,8 +204,3 @@ def main():
     
 if __name__ == '__main__':
     main()
-    
-
-
-
-
