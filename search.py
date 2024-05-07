@@ -47,24 +47,35 @@ def build():
         text = soup.get_text() # includes <title> and <meta> tags !!!
         # decode unicode characters
         text.encode().decode('unicode_escape')
-        # only keelp alnums > 2 characters
-        text = ''.join([ c for c in text if c.isalnum() or c.isspace() ])
+        
+        # only keelp alnums > 2 characters, replacing punctuation with whitespace
+        text = ''.join([ c if c.isalnum() else ' ' for c in text])
         words = [ w for w in text.lower().split() if w not in stopwords and len(w) > 2]
         
-        for posting in words:
+        # track the position of each word on the page in a dictionary
+        word_pos =  {}
+        for i, word in enumerate(words):
+            if word in word_pos:
+                word_pos[word].append(i)
+            else:
+                word_pos[word] = [i]
+        
+        for posting, pos in word_pos.items():
             # check if posting already in index
             if posting in index:
                 # check if pointer already in index for that posting
                 if page in index[posting]:
-                    # increment posting counter for that pointer
-                    index[posting][page] += 1
+                    # increment posting occurance counter for that pointer by the number of positions
+                    index[posting][page]['occurances'] += len(pos)
+                    # add the positions of the posting on the page
+                    index[posting][page]['positions'].extend(pos)
                 else:
-                    # add pointer to index for that posting
-                    index[posting][page] = 1
+                    # add pointer to index for that posting and add the positions of the posting on the page
+                    index[posting][page] = {'occurances': len(pos), 'positions': pos}
             else:
                 print(posting)
-                # add posting to index with 1 count for current pointer
-                index[posting] = {page: 1}
+                # add posting to index with count for current pointer
+                index[posting] = {page: {'occurances': len(pos), 'positions': pos}}
         
         
         # find all links on the page
@@ -150,52 +161,79 @@ def main():
             print(f"Searching for: {' '.join(query)}")
             # search the index for the query
             
-            # check if the first query is in the index
-            if query[0] not in index:
-                print("No results found.")
-                continue
+            consec_words = {}
+            all_words = {}
+            some_words = {}
             
-            # get the pointers for the first query
-            pointers = index.get(query[0]).copy()
+            # look for each search term and add the page to lowest ranked list if found, tracking number of words for which the page is found
+            for word in query:
+                if word in index:
+                    for page in index[word].keys():
+                        if page not in some_words.keys():
+                            # track the number of search terms found on the page, the first occurance of a search term on the page, and the total number of occurences of the search terms on the page
+                            some_words[page] = {"nQueryTerms" : 1, "first" : index[word][page]['positions'][0], "total" : index[word][page]['occurances']}
+                        else:
+                            # increment the number of search terms found on the page, update the first occurance of the search a on the page if necessary, and increment the total number of occurences of the search terms on the page
+                            some_words[page]['nQueryTerms'] += 1
+                            if index[word][page]['positions'][0] < some_words[page]['first']:
+                                some_words[page]['first'] = index[word][page]['positions'][0]
+                            some_words[page]['total'] += index[word][page]['occurances']
             
-            no_results = False
-            # if there are more search terms
-            if len(query) > 1:
-                # for each subsequent query, get the pointers and add the count for each pointer if found and remove it if not
-                for q in query[1:]:
-                    # check if query in index
-                    if q not in index:
-                        no_results = True
-                    else:
-                        ps = index.get(q)
-                        for p in ps:
-                            if p in pointers:
-                                pointers[p] += ps[p]
-                    
-                if no_results:
-                    print("No results found.")
-                    continue
+            # if a page appears in all search terms, add to all words list
+            for page in some_words.keys():
+                if some_words[page]['nQueryTerms'] == len(query):
+                    all_words[page] = some_words[page]
             
-                # otherwise remove pointers that have not had their count increased
-                p_to_remove = []
-                for p in pointers:
-                    if pointers[p] == index.get(query[0]).get(p):
-                        p_to_remove.append(p)
+            # remove any pages that are in all_words from some_words
+            for page in all_words.keys():
+                some_words.pop(page)
                 
-                for p in p_to_remove:
-                    del pointers[p]
+            # detemine if search query is consecutive in pages found in all_words
+            # get index of first word in query
+            for page in all_words:
+                for pos in index[query[0]][page]['positions']:
+                    # check if the other words in the query are in the same order on the page
+                    consec = True
+                    for i in range(1, len(query)):
+                        if pos + i not in index[query[i]][page]['positions']:
+                            consec = False
+                            break
+                    if consec:
+                        consec_words[page] = all_words[page]
+                        break
+            
+            # remove any pages that are in consec_words from all_words
+            for page in consec_words.keys():
+                all_words.pop(page)
+                    
+            # rank all 3 lists by number of occurences of search term then by earliest occurence of search terms
+            
+            
             
             # if there are no pointers, no results found
-            if not pointers:
+            if not some_words and not all_words and not consec_words:
                 print("No results found.")
                 continue
             
-            print(f"Found {len(pointers)} results:")
-            # sort the pointers by count
-            pointers = {k: v for k, v in sorted(pointers.items(), key=lambda item: item[1], reverse=True)}
-            for pointer in pointers:
-                print(pointer)
+            # first print pages with the search term in consecutive order
+            print("Pages with Exact Query Match:")
+            # for p in consec_words:
+            #     print(p)
+            print(consec_words)
+                
+            # then print pages with all search terms in any order
+            print("Pages with All Query Terms:")
+            # for p in all_words.keys():
+            #     print(p)
+            print(all_words)
+            
+            # then print pages with some search terms in any order
+            print("Pages with Some Query Terms:")
+            # for p in some_words.keys():
+            #     print(p)
+            print(some_words)
 
+            
         else:
             print("Invalid command.")
             continue
