@@ -158,7 +158,7 @@ def main():
             if query[-1] == '':
                 query = query[:-1]
                 
-            print(f"Searching for: {' '.join(query)}")
+            print(f"\n\nSearching for: {' '.join(query)}")
             # search the index for the query
             
             consec_words = {}
@@ -206,8 +206,12 @@ def main():
             for page in consec_words.keys():
                 all_words.pop(page)
                     
-            # rank all 3 lists by number of occurences of search term then by earliest occurence of search terms
-            
+            # sort consecutive words by number of occurences then by earliest occurence
+            consec_words = {k: v for k, v in sorted(consec_words.items(), key=lambda item: (-item[1]['total'], item[1]['first']))}
+            # sort all words by number of occurences then by earliest occurence
+            all_words = {k: v for k, v in sorted(all_words.items(), key=lambda item: (-item[1]['total'], item[1]['first']))}
+            # sort some words by number of search terms then number of occurences then by earliest occurence
+            some_words = {k: v for k, v in sorted(some_words.items(), key=lambda item: (-item[1]['nQueryTerms'], -item[1]['total'], item[1]['first']))}
             
             
             # if there are no pointers, no results found
@@ -215,23 +219,24 @@ def main():
                 print("No results found.")
                 continue
             
+            
+            print("Results are ranked by number of search terms present, then number of occurences of any search terms, then earliest occurence of a search term.")
             # first print pages with the search term in consecutive order
-            print("Pages with Exact Query Match:")
-            # for p in consec_words:
-            #     print(p)
-            print(consec_words)
+            print(f"\n\nFound {len(consec_words.keys())} Pages with Exact Query Match:")
+            for page, sorting_info in consec_words.items():
+                print(page, "- Number of Search Terms:", sorting_info['nQueryTerms'], "- Total Occurences of Search Terms:", sorting_info['total'], "- First Occurence of Search Term:", sorting_info['first'])
                 
             # then print pages with all search terms in any order
-            print("Pages with All Query Terms:")
-            # for p in all_words.keys():
-            #     print(p)
-            print(all_words)
-            
+            print(f"\n\nFound {len(all_words.keys())} Pages with All Query Terms:")
+            for page, sorting_info in all_words.items():
+                print(page, "- Number of Search Terms:", sorting_info['nQueryTerms'], "- Total Occurences of Search Terms:", sorting_info['total'], "- First Occurence of Search Term:", sorting_info['first'])
+
+
             # then print pages with some search terms in any order
-            print("Pages with Some Query Terms:")
-            # for p in some_words.keys():
-            #     print(p)
-            print(some_words)
+            print(f"\n\nFound {len(some_words.keys())} Pages with Some Query Terms:")
+            for page, sorting_info in some_words.items():
+                print(page, "- Number of Search Terms:", sorting_info['nQueryTerms'], "- Total Occurences of Search Terms:", sorting_info['total'], "- First Occurence of Search Term:", sorting_info['first'])
+
 
             
         else:
