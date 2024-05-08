@@ -220,22 +220,22 @@ def main():
                 continue
             
             
-            print("Results are ranked by number of search terms present, then number of occurences of any search terms, then earliest occurence of a search term.")
+            print("Results are ranked by number of search terms present, then the number of occurences of any search terms, then earliest occurence of a search term.")
             # first print pages with the search term in consecutive order
             print(f"\n\nFound {len(consec_words.keys())} Pages with Exact Query Match:")
             for page, sorting_info in consec_words.items():
-                print(page, "- Number of Search Terms:", sorting_info['nQueryTerms'], "- Total Occurences of Search Terms:", sorting_info['total'], "- First Occurence of Search Term:", sorting_info['first'])
+                print(page, "--- Number of Search Terms:", sorting_info['nQueryTerms'], "- Total Occurences of Search Terms:", sorting_info['total'], "- First Occurence of Search Term:", sorting_info['first'])
                 
             # then print pages with all search terms in any order
             print(f"\n\nFound {len(all_words.keys())} Pages with All Query Terms:")
             for page, sorting_info in all_words.items():
-                print(page, "- Number of Search Terms:", sorting_info['nQueryTerms'], "- Total Occurences of Search Terms:", sorting_info['total'], "- First Occurence of Search Term:", sorting_info['first'])
+                print(page, "--- Number of Search Terms:", sorting_info['nQueryTerms'], "- Total Occurences of Search Terms:", sorting_info['total'], "- First Occurence of Search Term:", sorting_info['first'])
 
 
             # then print pages with some search terms in any order
             print(f"\n\nFound {len(some_words.keys())} Pages with Some Query Terms:")
             for page, sorting_info in some_words.items():
-                print(page, "- Number of Search Terms:", sorting_info['nQueryTerms'], "- Total Occurences of Search Terms:", sorting_info['total'], "- First Occurence of Search Term:", sorting_info['first'])
+                print(page, "--- Number of Search Terms:", sorting_info['nQueryTerms'], "- Total Occurences of Search Terms:", sorting_info['total'], "- First Occurence of Search Term:", sorting_info['first'])
 
 
             
